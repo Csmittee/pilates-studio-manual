@@ -25,7 +25,26 @@
         .header h1 {
             color: #1a1a1a;
             margin-bottom: 0.5rem;
-            font-size: clamp(1.5rem, 5vw, 2.2rem);
+        }
+        
+        .language-switcher {
+            margin: 10px 0;
+        }
+        
+        .language-switcher a {
+            display: inline-block;
+            padding: 5px 15px;
+            margin: 0 5px;
+            text-decoration: none;
+            color: #333;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+        }
+        
+        .language-switcher a.active {
+            background: #e34c26;
+            color: white;
+            border-color: #e34c26;
         }
         
         .download-btn {
@@ -49,7 +68,7 @@
         
         #viewer canvas {
             max-width: 100%;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
             border-radius: 12px;
         }
         
@@ -82,12 +101,29 @@
             min-width: 120px;
             text-align: center;
         }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #999;
+            font-size: 0.9rem;
+            border-top: 1px solid #eaeaea;
+            margin-top: 40px;
+        }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>📖 Pilates Studio Startup Manual</h1>
-        <a href="Pilates%20Studio%20Startup%20Manual.pdf" download class="download-btn">📥 Download PDF</a>
+        
+        <!-- Language Switcher -->
+        <div class="language-switcher">
+            <a href="?lang=en" class="active">🇬🇧 English</a>
+            <a href="?lang=th">🇹🇭 ไทย</a>
+        </div>
+        
+        <!-- Download button changes based on language -->
+        <a href="Pilates%20Studio%20Startup%20Manual.pdf" download class="download-btn" id="downloadBtn">📥 Download PDF (English)</a>
     </div>
 
     <div class="viewer-container">
@@ -100,24 +136,56 @@
         </div>
     </div>
 
+    <div class="footer">
+        <p>© 2026 Janishammer Holdings · Professional Pilates Studio Resources · Thailand</p>
+    </div>
+
     <script>
+        // Get language from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        let lang = urlParams.get('lang') || 'en';
+        
+        // Set active class on language links
+        document.querySelectorAll('.language-switcher a').forEach(link => {
+            if (link.href.includes(`lang=${lang}`)) {
+                link.classList.add('active');
+            } else {
+                link.classList.remove('active');
+            }
+        });
+        
+        // Set correct PDF filename based on language
+        let pdfFile = 'Pilates%20Studio%20Startup%20Manual.pdf';
+        let downloadText = '📥 Download PDF (English)';
+        
+        if (lang === 'th') {
+            pdfFile = 'Pilates%20Studio%20Startup%20Manual%20TH.pdf';
+            downloadText = '📥 ดาวน์โหลด PDF (ภาษาไทย)';
+        }
+        
+        document.getElementById('downloadBtn').href = pdfFile;
+        document.getElementById('downloadBtn').textContent = downloadText;
+        
+        // PDF.js viewer
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
         
         let pdfDoc = null;
         let pageNum = 1;
         let totalPages = 0;
+        let pageRendering = false;
         
-        pdfjsLib.getDocument('Pilates%20Studio%20Startup%20Manual.pdf').promise.then(pdf => {
+        pdfjsLib.getDocument(pdfFile).promise.then(pdf => {
             pdfDoc = pdf;
             totalPages = pdf.numPages;
             document.getElementById('page-info').textContent = `Page 1 / ${totalPages}`;
             renderPage(1);
         }).catch(error => {
-            document.getElementById('page-info').textContent = 'Error loading PDF';
             console.error('PDF error:', error);
+            document.getElementById('page-info').textContent = 'Error loading PDF';
         });
         
         function renderPage(num) {
+            pageRendering = true;
             pdfDoc.getPage(num).then(page => {
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
@@ -125,30 +193,36 @@
                 canvas.height = viewport.height;
                 canvas.width = viewport.width;
                 
-                page.render({ canvasContext: ctx, viewport: viewport });
-                
-                document.getElementById('viewer').innerHTML = '';
-                document.getElementById('viewer').appendChild(canvas);
-                document.getElementById('page-info').textContent = `Page ${num} / ${totalPages}`;
-                
-                document.getElementById('prevBtn').disabled = (num <= 1);
-                document.getElementById('nextBtn').disabled = (num >= totalPages);
+                page.render({ canvasContext: ctx, viewport: viewport }).promise.then(() => {
+                    document.getElementById('viewer').innerHTML = '';
+                    document.getElementById('viewer').appendChild(canvas);
+                    document.getElementById('page-info').textContent = `Page ${num} / ${totalPages}`;
+                    document.getElementById('prevBtn').disabled = (num <= 1);
+                    document.getElementById('nextBtn').disabled = (num >= totalPages);
+                    pageRendering = false;
+                });
             });
         }
         
         function prevPage() {
-            if (pageNum > 1) {
-                pageNum--;
-                renderPage(pageNum);
-            }
+            if (pageRendering || pageNum <= 1) return;
+            pageNum--;
+            renderPage(pageNum);
         }
         
         function nextPage() {
-            if (pageNum < totalPages) {
-                pageNum++;
-                renderPage(pageNum);
-            }
+            if (pageRendering || !pdfDoc || pageNum >= totalPages) return;
+            pageNum++;
+            renderPage(pageNum);
         }
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') prevPage();
+            if (e.key === 'ArrowRight') nextPage();
+        });
     </script>
+    
+    <!-- Janishammer Central Injector -->
+    <script src="https://cdn.jsdelivr.net/gh/csmittee/janishammer-central@main/js/injector.js"></script>
 </body>
 </html>
