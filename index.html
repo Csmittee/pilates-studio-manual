@@ -87,7 +87,7 @@
 <body>
     <div class="header">
         <h1>📖 Pilates Studio Startup Manual</h1>
-        <a href="manual.pdf" download class="download-btn">📥 Download PDF</a>
+        <a href="Pilates%20Studio%20Startup%20Manual.pdf" download class="download-btn">📥 Download PDF</a>
     </div>
 
     <div class="viewer-container">
@@ -107,13 +107,14 @@
         let pageNum = 1;
         let totalPages = 0;
         
-        pdfjsLib.getDocument('manual.pdf').promise.then(pdf => {
+        pdfjsLib.getDocument('Pilates%20Studio%20Startup%20Manual.pdf').promise.then(pdf => {
             pdfDoc = pdf;
             totalPages = pdf.numPages;
             document.getElementById('page-info').textContent = `Page 1 / ${totalPages}`;
             renderPage(1);
         }).catch(error => {
             document.getElementById('page-info').textContent = 'Error loading PDF';
+            console.error('PDF error:', error);
         });
         
         function renderPage(num) {
